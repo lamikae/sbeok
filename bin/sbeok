@@ -27,7 +27,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 '
 
-VERSION='1.0.0'
+VERSION='1.0.1'
 debug=0
 
 # The input arguments may be given directly, as a specific shell-escaped
@@ -84,7 +84,12 @@ which sndfile-info >/dev/null
 for filename in ${@}; do
 
 	echo -n ${filename}
-
+	
+	# check that this is RIFF wave file
+	if [ -z "$(sndfile-info ${filename} | grep RIFF)" ]; then
+		echo ': not a RIFF wave file'
+		continue
+	fi
 	track_length=$(\
 		sndfile-info "${filename}" |\
 			awk -F' : ' '/^data/{print $2}')
@@ -95,11 +100,11 @@ for filename in ${@}; do
 	fi
 	remainder=$(expr $track_length % 2352)
 
-	# if remainder == 0, file is OK
-	if [ $remainder != 0 ]; then
-		echo ": FAILED"
-	else
+	if [ $remainder == 0 ]; then
 		echo ": OK"
+	else
+		missing_bytes=$(expr 2352 - $remainder)
+		echo ": FAILED, missing $missing_bytes bytes"
 	fi
 
 	if [ $debug == 1 ]; then

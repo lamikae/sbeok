@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 : '
 Checks whether the audio data length of a wav file is an exact
-multiple of audio cd sector length in case of sector boundary errors (SBE).
+multiple of audio CD sector length. Unless so, silence will be padded
+onto the end of the track, causing unwanted clicks during playback
+at track transition, if the audio does not fade out between tracks.
 
 A single audio sector is 2352 bytes.
 (16 bits * 44100 1/sec * 2 channels * 1/75 sec * 1/8 bytes/bit).
@@ -27,7 +29,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 '
 
-VERSION='1.0.1'
+VERSION='1.0.2'
 debug=0
 
 # The input arguments may be given directly, as a specific shell-escaped
@@ -63,8 +65,8 @@ Checks whether an audio wav track will not expose
 USAGE
 	sbeok [files(s) ...]
 
-When burning an audio cd where the audio is continuous over a track change,
-you need to ensure the proper length of each track to prevent small clicks.
+When burning an audio CD where the audio is continuous over a track change,
+you need to ensure the proper length of each track to create a quality disc.
 
 On audio cd, tracks begin at full sectors. The Red Book audio cd specification
 defines a sector length of 1/75 sec. If the audio data does not fill up,
@@ -73,12 +75,14 @@ to cause an annoying click in some cd players, which is called a
 sector boundary error (SBE). A single audio sector is 2352 bytes.
 
 Give a list of .wav files as a parameter to check if it properly fills to sector boundary.
+
+If the tracks won't pass the check, you can use wavbreaker to fix them.
 __USAGE
 }
 
 [[ -n $* ]] || (usage; echo; die "no input file(s)")
 
-which sndfile-info >/dev/null || die "sndfile-programs not installed"
+which sndfile-info >/dev/null || die "sndfile-info not installed"
 
 for filename in ${@}; do
 
@@ -89,16 +93,16 @@ for filename in ${@}; do
 		echo "not a RIFF wave file"
 		continue
 	fi
+
 	track_length=$(\
 		sndfile-info "${filename}" |\
-			awk -F' : ' '/^data/{print $2}')
-	
+		awk -F' : ' '/^data/{print $2}')
 	if [ -z $track_length ]; then
 		echo "ERROR"
 		continue
 	fi
-	remainder=$(expr $track_length % 2352)
 
+	remainder=$(expr $track_length % 2352)
 	if [ $remainder == 0 ]; then
 		echo "OK"
 	else

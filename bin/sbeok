@@ -5,11 +5,11 @@ multiple of audio cd sector length in case of sector boundary errors (SBE).
 
 A single audio sector is 2352 bytes.
 (16 bits * 44100 1/sec * 2 channels * 1/75 sec * 1/8 bytes/bit).
-The check is done by calculating the remainder of "data_bytes mod 2352".
+File audio length is appropriate for Red Book audio CD when 
+ "data length modulo sector size" is zero.
 
-To get the audio data bytes, `sndfile-info` from sndfile-programs is used
-(exact package name may vary by distribution).
-
+`sndfile-info` is used to get the audio data bytes count from the input files.
+On Debian/Ubuntu, this is in package sndfile-programs.
 
 Copyright (C) 2011  Mikael Lammentausta
 
@@ -28,24 +28,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 '
 
 VERSION='1.0.0'
+debug=0
 
+# The input arguments may be given directly, as a specific shell-escaped
+# filename, or as "*.wav" which will be expanded by the shell, and 
+# spaces in filenames will not be escaped.
+# 
+# Modify IFS (temporarily) to handle these use cases.
+_IFS=$IFS
+IFS=$(echo -en "\n\b")
+
+# trap certain exit values to onexit()
 trap onexit 2 3 15
 
 #--- onexit() -----------------------------------------------------
 #  @param $1 integer  (optional) Exit status.  If not set, use `$?'
 function onexit() {
-    local exit_status=${1:-$?}
-    echo Exiting $0 with $exit_status
-    exit $exit_status
+	local exit_status=${1:-$?}
+	# restore IFS
+	IFS=_IFS
+	[[ $debug == 1 ]] && echo Exiting $0 with $exit_status
+	exit $exit_status
 }
 function die {
-        echo "ERROR: $1"
-        exit 1
+	echo "ERROR: $1"
+	onexit 1
 }
 function usage {
 	cat << __USAGE
 SBEOK $VERSION
-Checks whether a wav file fills audio cd sectors.
+Checks whether an audio wav track will not expose
+  sector boundary error on audio CD.
 
 USAGE
 	sbeok [files(s) ...]
@@ -65,18 +78,11 @@ __USAGE
 
 [[ -n $* ]] || (usage; echo; die "no input file(s)")
 
-debug=0
-
 which sndfile-info >/dev/null
 [[ $? == 0 ]] || die "sndfile-programs not installed"
 
-# since the input argument can be either a single wav file or 
-# "*.wav", which will be exploded in the shell to filenames,
-# so to properly handle them IFS is temporarily altered..
-_IFS=$IFS
-IFS=$(echo -en "\n\b")
-
 for filename in ${@}; do
+
 	echo -n ${filename}
 
 	track_length=$(\
@@ -102,6 +108,5 @@ for filename in ${@}; do
 	fi
 
 done
-IFS=_IFS
 
-exit 0
+onexit 0

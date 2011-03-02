@@ -78,16 +78,15 @@ __USAGE
 
 [[ -n $* ]] || (usage; echo; die "no input file(s)")
 
-which sndfile-info >/dev/null
-[[ $? == 0 ]] || die "sndfile-programs not installed"
+which sndfile-info >/dev/null || die "sndfile-programs not installed"
 
 for filename in ${@}; do
 
-	echo -n ${filename}
+	echo -n "${filename}: "
 	
 	# check that this is RIFF wave file
 	if [ -z "$(sndfile-info ${filename} | grep RIFF)" ]; then
-		echo ': not a RIFF wave file'
+		echo "not a RIFF wave file"
 		continue
 	fi
 	track_length=$(\
@@ -95,16 +94,16 @@ for filename in ${@}; do
 			awk -F' : ' '/^data/{print $2}')
 	
 	if [ -z $track_length ]; then
-		echo ': ERROR'
+		echo "ERROR"
 		continue
 	fi
 	remainder=$(expr $track_length % 2352)
 
 	if [ $remainder == 0 ]; then
-		echo ": OK"
+		echo "OK"
 	else
 		missing_bytes=$(expr 2352 - $remainder)
-		echo ": FAILED, missing $missing_bytes bytes"
+		echo "FAILED, missing $missing_bytes bytes"
 	fi
 
 	if [ $debug == 1 ]; then

@@ -8,9 +8,9 @@ at track transition, if the audio does not fade out between tracks.
 A single audio sector is 2352 bytes.
 (16 bits * 44100 1/sec * 2 channels * 1/75 sec * 1/8 bytes/bit).
 File audio length is appropriate for Red Book audio CD when 
- "data length modulo sector size" is zero.
+audio data length divided by sector size is zero.
 
-`sndfile-info` is used to get the audio data bytes count from the input files.
+`sndfile-info` is used to get the audio data byte count.
 On Debian/Ubuntu, this is in package sndfile-programs.
 
 Copyright (C) 2011  Mikael Lammentausta
@@ -59,24 +59,20 @@ function die {
 function usage {
 	cat << __USAGE
 SBEOK $VERSION
-Checks whether an audio wav track will not expose
-  sector boundary error on audio CD.
+Checks whether audio wav track aligns on CD sector boundaries.
 
 USAGE
-	sbeok [files(s) ...]
+	sbeok [wav file(s) ...]
 
 When burning an audio CD where the audio is continuous over a track change,
 you need to ensure the proper length of each track to create a quality disc.
 
 On audio cd, tracks begin at full sectors. The Red Book audio cd specification
-defines a sector length of 1/75 sec. If the audio data does not fill up,
-the cd burner will insert silence to fill out the sector. This is enough 
-to cause an annoying click in some cd players, which is called a 
-sector boundary error (SBE). A single audio sector is 2352 bytes.
+defines a sector length of 1/75 sec, which equals to 2352 bytes.
 
-Give a list of .wav files as a parameter to check if it properly fills to sector boundary.
+If the audio data does not align on the sector boundary, zero bytes will be
+inserted instead. This is enough to cause an annoying click in some cd players.
 
-If the tracks won't pass the check, you can use wavbreaker to fix them.
 __USAGE
 }
 

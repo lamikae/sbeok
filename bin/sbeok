@@ -10,9 +10,6 @@ A single audio sector is 2352 bytes.
 File audio length is appropriate for Red Book audio CD when 
 audio data length divided by sector size is zero.
 
-`sndfile-info` is used to get the audio data byte count.
-On Debian/Ubuntu, this is in package sndfile-programs.
-
 Copyright (C) 2011  Mikael Lammentausta
 
 This program is free software: you can redistribute it and/or modify
@@ -78,25 +75,23 @@ __USAGE
 
 [[ -n $* ]] || (usage; echo; die "no input file(s)")
 
-which sndfile-info >/dev/null || die "sndfile-info not installed"
-
 for filename in ${@}; do
 
 	echo -n "${filename}: "
 	
 	# check that this is RIFF wave file
-	if [ -z "$(sndfile-info ${filename} | grep RIFF)" ]; then
+	if [ -z $(file ${filename} | grep RIFF | grep WAVE) ]; then
 		echo "not a RIFF wave file"
 		continue
 	fi
 
-	track_length=$(\
-		sndfile-info "${filename}" |\
-		awk -F' : ' '/^data/{print $2}')
-	if [ -z $track_length ]; then
+	filesize=$(stat -f "%z" "${filename}")
+	if [ -z $filesize ]; then
 		echo "ERROR"
 		continue
 	fi
+	# canonical wav file header is 44 bytes
+	track_length=$(expr $filesize - 44)
 
 	remainder=$(expr $track_length % 2352)
 	if [ $remainder == 0 ]; then

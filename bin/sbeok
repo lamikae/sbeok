@@ -85,7 +85,11 @@ for filename in ${@}; do
 		continue
 	fi
 
-	filesize=$(stat -f "%z" "${filename}")
+	if [ $(uname) == 'Linux' ]; then
+		filesize=$(stat --format "%s" "${filename}")
+	elif [ $(uname) == 'Darwin' ]; then
+		filesize=$(stat -f "%z" "${filename}")
+	fi
 	if [ -z $filesize ]; then
 		echo "ERROR"
 		continue

@@ -1,19 +1,13 @@
-SBEOK is a small shell script to check whether the audio data length 
-of a wav file is an exact multiple of audio cd sector length.
+SBEOK is a small shell script to ensure a wav file length is CD audio
+compliant. When burning an audio disc where the audio is continuous over 
+a track change, the wav data length should be an exact multiple of audio 
+CD sector length.
 
-When burning an audio cd where the audio is continuous over a track change,
-you need to ensure the proper length of each track to prevent small clicks.
+The Red Book audio CD specification defines a sector length of 1/75 sec.
+If the audio data does not fill up the last sector, the burner will insert
+silence to fill out the sector. This may be enough to cause an annoying
+click in some CD players, called a sector boundary error (SBE).
 
-On audio cd, tracks begin at full sectors. The Red Book audio cd specification
-defines a sector length of 1/75 sec. If the audio data does not fill up,
-the cd burner will insert silence to fill out the sector. This is enough 
-to cause an annoying click in some cd players, which is called a 
-sector boundary error (SBE).
-
-A single audio sector is 2352 bytes.
-(16 bits * 44100 1/sec * 2 channels * 1/75 sec * 1/8 bytes/bit).
-The check is done by calculating the remainder of "data_bytes mod 2352".
-
-To get the audio data bytes, `sndfile-info` from sndfile-programs is used
-(exact package name may vary by distribution).
+The program is a single shell script file ready to be dropped onto $PATH,
+and requires no dependencies apart from bash.
 
